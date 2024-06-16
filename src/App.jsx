@@ -1,40 +1,35 @@
 import { useState, useEffect } from "react"
 import { WINNER_COMBOS, TURNS, CELLS_OF_BOARD } from "./constanst"
-
-const Column = ({children, index, handleCell, isSelected}) => {
-
-  const className = `square ${isSelected === "X" ? "selected-player" : "selected-playerTwo"}`
-
-  return(
-    <div onClick={() => {handleCell(index)}} className={isSelected === null ? "square" : className}>{children}</div>
-  )
-}
-
-const Cell = ({children, isSelected}) => {
-  const className = `cell ${isSelected ? 'is-selected' : ''}`
-  return(
-      <div className={className}>{children === "X" ? "Player 1" : "Player 2"}</div>
-  )
-}
+import confetti from 'canvas-confetti'
+import { Cell } from "./components/Cell"
+import { Column } from "./components/Column"
+import { Winner } from "./components/Winner"
 
 
 function App(){
 
   const [board, setBoard] = useState(Array(16).fill(null));
   const [turn, setTurn] = useState(TURNS.X); 
+  const [winner, setWinner] = useState(null)
 
+  const checkEndGame = (newBoard) => {
+    return newBoard.every((square) => square !== null);
+  };
 
-  useEffect(() => {
-    console.log(board)
-  }, [board])
-
-  const checkWinner = () => {
-
+  const checkWinner = (boardToCheck) => {
+    for(const combo of WINNER_COMBOS){
+      const [a, b, c, d] = combo
+      if(boardToCheck[a] && boardToCheck[a] === boardToCheck[b] && boardToCheck[a] === boardToCheck[c] && boardToCheck[a] === boardToCheck[d]){
+        return boardToCheck[a]
+      }
+    }
+    return null
   }
 
   const resetGame = () => {
     setBoard(Array(16).fill(null))
     setTurn(TURNS.X)
+    setWinner(null)
   }
 
   const handleCell = (index) => {
@@ -46,7 +41,6 @@ function App(){
         if(board[celda] === null){
           newBoard[celda] = turn
           setBoard(newBoard)
-
           const newTurn = turn === TURNS.X ? TURNS.O : TURNS.X
           setTurn(newTurn)
         }
@@ -72,6 +66,13 @@ function App(){
           setTurn(newTurn)
         }
       }
+      const newWinner = checkWinner(newBoard)
+      if(newWinner){
+        confetti()
+        setWinner(newWinner)
+      } else if(checkEndGame(newBoard)){
+        setWinner(false)
+      }
     }
   }
 
@@ -87,9 +88,10 @@ function App(){
         })}
       </section>
       <section className="turn">
-          <Cell isSelected={turn === TURNS.X}>{TURNS.X}</Cell>
-          <Cell isSelected={turn === TURNS.O}>{TURNS.O}</Cell>
+          <Cell isSelected={turn === TURNS.X} turn={turn}>{TURNS.X}</Cell>
+          <Cell isSelected={turn === TURNS.O} turn={turn}>{TURNS.O}</Cell>
         </section>
+        <Winner resetGame={resetGame} winner={winner}></Winner>
     </main>
   )
 }
